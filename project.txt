@@ -1,0 +1,245 @@
+.386
+.model flat,stdcall
+option casemap:none
+include irvine32.inc
+
+MAX_BUFFER_SIZE = 5000
+
+.data
+filename db "hello.txt",0
+buffer db MAX_BUFFER_SIZE dup(?)
+txtfile db "This is text file",0
+pdffile db "This is PDF file",0
+txt_extension db ".txt",0
+pdf_extension db ".pdf",0
+
+file_error_Msg db ", Error opening file",0
+
+.code 
+main PROC
+
+
+;opening of file
+mov edx,offset filename
+call OpenInputFile
+mov esi,eax 
+
+
+;check if file is valid or not
+cmp esi, INVALID_HANDLE_VALUE
+je file_error
+
+call txt_file_identity
+call Crlf
+call read_file
+
+; Discover file extension
+;mov ebx,offset filename
+;call GetFileExtension
+
+;CallTextFile:
+;call txt_file_identity
+
+;cmp edx,offset txt_extension
+;je CallTextFile
+;call pdf_file_identity
+
+
+
+; if file opening is not opened
+file_error:
+mov edx,offset filename
+call WriteString
+mov edx, offset file_error_Msg
+call WriteString
+exit
+
+main ENDP
+
+; Text file identification
+txt_file_identity PROC
+mov edx,offset txtfile
+call WriteString
+ret
+txt_file_identity ENDP
+
+; PDF file identification
+pdf_file_identity PROC
+mov edx,offset pdffile
+call WriteString
+ret
+pdf_file_identity ENDP
+
+; reading file
+
+read_file PROC
+call Crlf
+mov edx,offset buffer
+mov ecx,MAX_BUFFER_SIZE
+call ReadFromFile
+
+;printing line to console
+mov edx, offset buffer
+call WriteString
+exit
+read_file ENDP
+
+
+GetFileExtension PROC
+	push esi
+	push edx
+
+	mov esi,offset filename
+	xor edi,edi
+	mov ecx,esi
+
+find_dot:
+	lodsb
+	cmp al,'.'
+	jne find_dot
+	mov edx,ecx
+
+
+copy_extension:
+	lodsb
+	stosb
+	test al,al
+	jnz copy_extension
+
+	pop edi
+	pop esi
+
+	ret
+GetFileExtension ENDP
+
+END main
+
+
+
+
+
+
+
+
+
+
+.data
+
+filename byte "hello.txt",0
+file_size byte ?
+extension byte 4 dup(0)
+
+file extension:
+
+file_extension PROC
+	mov file_size,(sizeof filename)-1
+	movzx eax,file_size
+	
+	sub eax,4
+	mov esi,eax
+	mov ebx,0
+	mov ecx,4
+	get_extension:
+	movzx edx,filename[esi]
+	mov extension[ebx],dl
+	inc esi
+	inc ebx
+Loop get_extension
+
+
+file_extension ENDP
+
+
+
+
+
+comparison of string:
+
+strings_equal:
+    mov edx, offset message_equal
+
+end_comparison:
+    call WriteString         ; Print the message
+    invoke ExitProcess, 0    ; Exit the program
+
+compareStrings PROC
+    mov ecx, 0               ; Initialize counter to zero
+compare_loop:
+    mov al, [esi + ecx]      ; Load character from string1
+    mov bl, [edi + ecx]      ; Load character from string2
+    cmp al, bl               ; Compare characters
+    jne strings_not_equal    ; If not equal, jump
+    cmp al, 0                ; Check for end of string
+    jne continue_compare     ; If not end of string, continue
+    xor eax, eax             ; Set return value to zero (equal)
+    ret
+
+continue_compare:
+    inc ecx                  ; Move to next character
+    jmp compare_loop         ; Continue loop
+
+strings_not_equal:
+    mov eax, 1               ; Set return value to one (not equal)
+    ret
+
+compareStrings ENDP
+
+
+
+
+
+
+complete code of comparison:
+
+.386
+.model flat, stdcall
+option casemap:none
+include irvine32.inc
+
+.data
+    string1 db "hello",0
+    string2 db "world",0
+    message_equal db "Strings are equal",0
+    message_not_equal db "Strings are not equal",0
+
+.code
+main PROC
+    mov esi, offset string1  ; Point ESI to the first string
+    mov edi, offset string2  ; Point EDI to the second string
+    call compareStrings      ; Call the comparison function
+    cmp eax, 0               ; Check the return value
+    je strings_equal         ; If zero, strings are equal
+    mov edx, offset message_not_equal
+    jmp end_comparison
+
+strings_equal:
+    mov edx, offset message_equal
+
+end_comparison:
+    call WriteString         ; Print the message
+    invoke ExitProcess, 0    ; Exit the program
+
+compareStrings PROC
+    mov ecx, 0               ; Initialize counter to zero
+compare_loop:
+    mov al, [esi + ecx]      ; Load character from string1
+    mov bl, [edi + ecx]      ; Load character from string2
+    cmp al, bl               ; Compare characters
+    jne strings_not_equal    ; If not equal, jump
+    cmp al, 0                ; Check for end of string
+    jne continue_compare     ; If not end of string, continue
+    xor eax, eax             ; Set return value to zero (equal)
+    ret
+
+continue_compare:
+    inc ecx                  ; Move to next character
+    jmp compare_loop         ; Continue loop
+
+strings_not_equal:
+    mov eax, 1               ; Set return value to one (not equal)
+    ret
+
+compareStrings ENDP
+
+END main
+
